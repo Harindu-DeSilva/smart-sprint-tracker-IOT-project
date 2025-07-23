@@ -1,15 +1,14 @@
-#include <ESP8266WiFi.h>          // WiFi for ESP8266
-#include <ESP8266Firebase.h>      // Firebase RTDB library
-#include <NTPClient.h>            // NTP for getting epoch time
-#include <WiFiUdp.h>              // UDP for NTP
+#include <ESP8266WiFi.h>          
+#include <ESP8266Firebase.h>      
+#include <NTPClient.h>            
+#include <WiFiUdp.h>              
 
 // === WiFi & Firebase ===
-#define WIFI_SSID "Harindu"
-#define WIFI_PASSWORD "123456789"
-#define REFERENCE_URL "https://smart-sprint-tracker-default-rtdb.firebaseio.com/"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
+#define REFERENCE_URL ""
 
-// === Hardware Pins ===
-const int START_SENSOR_PIN = D7;   // IR sensor pin (GPIO13)
+const int START_SENSOR_PIN = D7;   
 
 // === Firebase & Time ===
 Firebase firebase(REFERENCE_URL);
@@ -19,22 +18,22 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org");
 // === Race State ===
 String currentRaceId = "";
 String status = "";
-unsigned long startTimes[20];   // Store up to 20 lap start times
+unsigned long startTimes[20];  
 int targetLaps = 0;
 int currentLap = 0;
-volatile bool irDetected = false;   // Flag set by interrupt
+volatile bool irDetected = false;   
 
 // === Timing ===
 unsigned long lastTimeUpdate = 0;
 
 void IRAM_ATTR handleIR() {
-  irDetected = true;  // Interrupt: mark flag immediately
+  irDetected = true;  
 }
 
 void setup() {
   Serial.begin(115200);
 
-  pinMode(START_SENSOR_PIN, INPUT);  // IR sensor pin
+  pinMode(START_SENSOR_PIN, INPUT);  
 
   // Attach interrupt to IR pin — detect FALLING edge (beam break)
   attachInterrupt(digitalPinToInterrupt(START_SENSOR_PIN), handleIR, FALLING);
@@ -48,7 +47,7 @@ void setup() {
   Serial.println("\nWiFi connected!");
 
   timeClient.begin();
-  timeClient.setTimeOffset(19800); // GMT+5:30
+  timeClient.setTimeOffset(19800); 
 
   firebase.json(true);
 
@@ -81,19 +80,19 @@ void loop() {
     if (status == "started") {
       currentLap = 1;
       targetLaps = firebase.getInt("liveRace/targetLaps");
-      if (targetLaps > 20) targetLaps = 20;  // Prevent overflow
+      if (targetLaps > 20) targetLaps = 20;  
       Serial.println("Race started! Laps: " + String(targetLaps));
     }
   }
 
   // === Handle IR detection ===
   if (status == "started" && irDetected && currentLap <= targetLaps) {
-    irDetected = false;  // Reset flag
+    irDetected = false;  
 
-    timeClient.update(); // Sync time
+    timeClient.update(); 
     unsigned long startTime = timeClient.getEpochTime();
 
-    startTimes[currentLap - 1] = startTime;  // Store locally
+    startTimes[currentLap - 1] = startTime;  
 
     Serial.println("Lap " + String(currentLap) + " started at: " + String(startTime));
 
@@ -113,5 +112,5 @@ void uploadStartTimes() {
     bool ok = firebase.setInt(path, startTimes[i]);
     Serial.println(ok ? "Lap " + String(i + 1) + " uploaded." : "Failed upload Lap " + String(i + 1));
   }
-  Serial.println("✅ All start times uploaded!");
+  Serial.println("All start times uploaded!");
 }
