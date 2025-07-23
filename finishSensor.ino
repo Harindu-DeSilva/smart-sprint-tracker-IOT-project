@@ -1,30 +1,30 @@
-#include <ESP8266WiFi.h>         // WiFi for ESP8266
-#include <ESP8266Firebase.h>     // Firebase RTDB library
-#include <NTPClient.h>           // NTP for getting epoch time
-#include <WiFiUdp.h>             // UDP for NTP
-#include <LiquidCrystal_I2C.h>   // I2C LCD for ESP8266
-#include <Wire.h>                // I2C Wire
+#include <ESP8266WiFi.h>         
+#include <ESP8266Firebase.h>     
+#include <NTPClient.h>           
+#include <WiFiUdp.h>             
+#include <LiquidCrystal_I2C.h>   
+#include <Wire.h>                
 
 // === WiFi & Firebase ===
-#define WIFI_SSID "Harindu"
-#define WIFI_PASSWORD "123456789"
-#define REFERENCE_URL "https://smart-sprint-tracker-default-rtdb.firebaseio.com/"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
+#define REFERENCE_URL ""
 
 // === Hardware Pins ===
-const int ENCODER_CLK = D5;          // Rotary encoder CLK (interrupt)
-const int ENCODER_DT  = D6;          // Rotary encoder DT
-const int ENCODER_SW  = D3;          // Rotary encoder push button
-const int FINISH_SENSOR_PIN = D7;    // Finish line IR sensor
+const int ENCODER_CLK = D5;          
+const int ENCODER_DT  = D6;          
+const int ENCODER_SW  = D3;          
+const int FINISH_SENSOR_PIN = D7;    
 
 // === Rotary Encoder Settings ===
-const int stepsPerRevolution = 30;   // Steps per revolution
-const float distancePerStep = 100.0 / stepsPerRevolution;  // Example: 3.33m per step
+const int stepsPerRevolution = 30;   
+const float distancePerStep = 100.0 / stepsPerRevolution;  
 
-volatile int lastClkState;           // Last CLK state
-volatile float currentDistance = 0.0; // Shared distance variable (volatile for ISR)
+volatile int lastClkState;           
+volatile float currentDistance = 0.0; 
 
-// === LCD ===
-LiquidCrystal_I2C lcd(0x27, 16, 2);  // LCD I2C addr 0x27, 16x2
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);  
 
 // === Firebase & Time ===
 Firebase firebase(REFERENCE_URL);
@@ -64,7 +64,7 @@ void setup() {
   pinMode(ENCODER_SW, INPUT_PULLUP);
   pinMode(FINISH_SENSOR_PIN, INPUT);
 
-  Wire.begin(D2, D1);      // SDA, SCL pins
+  Wire.begin(D2, D1);     
   lcd.begin(16, 2);
   lcd.backlight();
   lcd.clear();
@@ -79,11 +79,11 @@ void setup() {
   }
 
   timeClient.begin();
-  timeClient.setTimeOffset(19800); // GMT+5:30
+  timeClient.setTimeOffset(19800); 
 
   firebase.json(true);
 
-  lastClkState = digitalRead(ENCODER_CLK); // Read initial state
+  lastClkState = digitalRead(ENCODER_CLK); 
 
   attachInterrupt(digitalPinToInterrupt(ENCODER_CLK), updateEncoder, CHANGE);
 
@@ -129,9 +129,9 @@ void IRAM_ATTR updateEncoder() {
   int newClkState = digitalRead(ENCODER_CLK);
   if (newClkState != lastClkState) {
     if (digitalRead(ENCODER_DT) != newClkState) {
-      currentDistance += distancePerStep; // CW
+      currentDistance += distancePerStep; 
     } else {
-      currentDistance -= distancePerStep; // CCW
+      currentDistance -= distancePerStep; 
       if (currentDistance < 0) currentDistance = 0;
     }
     lastClkState = newClkState;
